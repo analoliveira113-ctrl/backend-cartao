@@ -1,52 +1,49 @@
 const express = require('express');
 const cors = require('cors');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 
-// Configuração do CORS
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
-
+// Habilita o CORS para qualquer origem e trata as requisições OPTIONS automaticamente
+app.use(cors());
 app.use(express.json());
 
-// Tentativa segura de importar e inicializar o Supabase
-let supabase = null;
-try {
-  const { createClient } = require('@supabase/supabase-js');
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_KEY;
+// Configuração do Supabase via Variáveis de Ambiente da Vercel
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
-  if (SUPABASE_URL && SUPABASE_KEY) {
-    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-  }
-} catch (err) {
-  console.error("Erro ao inicializar Supabase:", err);
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_KEY) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+} else {
+  console.warn("⚠️ ATENÇÃO: Variáveis SUPABASE_URL e SUPABASE_KEY não configuradas!");
 }
 
+// Router para manipular as rotas
 const router = express.Router();
 
-// ROTA DE TESTE (Não depende do banco para responder)
+// Rota de Teste
 router.get('/teste', (req, res) => {
-  return res.json({ 
+  res.json({ 
     sucesso: true, 
-    mensagem: 'API do Meu Cartão RFID rodando perfeitamente na Vercel!',
+    mensagem: 'API do Meu Cartão RF ID rodando perfeitamente na Vercel!',
     timestamp: new Date().toISOString()
   });
 });
 
-// CADASTRAR
+// Cadastrar Cartão
 router.post('/meu-cartao/cadastrar', async (req, res) => {
   try {
     const { nome, codigoCartao, matricula } = req.body;
+
     if (!nome || !codigoCartao || !matricula) {
       return res.status(400).json({ sucesso: false, mensagem: 'Campos obrigatórios ausentes.' });
     }
+
     if (!supabase) {
-      return res.status(500).json({ sucesso: false, mensagem: 'Erro: Conexão com Supabase não configurada nas variáveis de ambiente.' });
+      return res.status(500).json({ sucesso: false, mensagem: 'Erro: Conexão com banco não configurada no servidor.' });
     }
+
     const { data, error } = await supabase
       .from('cartoes')
       .insert([{ 
@@ -58,22 +55,27 @@ router.post('/meu-cartao/cadastrar', async (req, res) => {
       .select();
 
     if (error) throw error;
+
     return res.status(201).json({ sucesso: true, mensagem: 'Cartão cadastrado com sucesso!', data });
   } catch (error) {
+    console.error('Erro ao cadastrar:', error);
     return res.status(500).json({ sucesso: false, mensagem: error.message });
   }
 });
 
-// CONSULTAR
+// Consultar Cartão
 router.post('/meu-cartao/consultar', async (req, res) => {
   try {
     const { codigoCartao, matricula } = req.body;
+
     if (!codigoCartao || !matricula) {
-      return res.status(400).json({ sucesso: false, mensagem: 'Código e matrícula são obrigatórios.' });
+      return res.status(400).json({ sucesso: false, mensagem: 'Código do cartão e matrícula são obrigatórios.' });
     }
+
     if (!supabase) {
-      return res.status(500).json({ sucesso: false, mensagem: 'Erro: Conexão com Supabase não configurada nas variáveis de ambiente.' });
+      return res.status(500).json({ sucesso: false, mensagem: 'Erro: Conexão com banco não configurada no servidor.' });
     }
+
     const { data, error } = await supabase
       .from('cartoes')
       .select('*')
@@ -84,19 +86,22 @@ router.post('/meu-cartao/consultar', async (req, res) => {
     if (error || !data) {
       return res.status(404).json({ sucesso: false, mensagem: 'Cartão ou matrícula não encontrados.' });
     }
+
     return res.json({ sucesso: true, cartao: data });
   } catch (error) {
     return res.status(500).json({ sucesso: false, mensagem: error.message });
   }
 });
 
-// SIMULAR RADAR
+// Simular Radar
 router.post('/meu-cartao/simular-radar', async (req, res) => {
   try {
     const { codigoCartao, matricula, sinalRssi } = req.body;
+
     if (!codigoCartao || !matricula) {
-      return res.status(400).json({ sucesso: false, mensagem: 'Dados insuficientes.' });
+      return res.status(400).json({ sucesso: false, mensagem: 'Dados insuficientes para simulação.' });
     }
+
     const rssi = parseInt(sinalRssi) || -60;
     const distanciaMetros = Math.max(1, Math.round(Math.pow(10, (-59 - rssi) / (10 * 2))));
 
@@ -111,7 +116,13 @@ router.post('/meu-cartao/simular-radar', async (req, res) => {
   }
 });
 
+// Monta as rotas em /api e na raiz
 app.use('/api', router);
 app.use('/', router);
 
 module.exports = app;
+
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`🚀 Servidor rodando localmente na porta ${PORT}`));
+}
