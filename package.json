@@ -1,0 +1,17 @@
+{
+  "name": "cartao-senai-sesi",
+  "version": "1.0.0",
+  "main": "script.js",
+  "scripts": {
+    "start": "node script.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Sistema de busca de cartão com Supabase",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "express": "^4.22.2"
+  }
+}
