@@ -1,17 +1,17 @@
 const express = require('express');
 const cors = require('cors');
+const { createClient } = require('@supabase/supabase-js'); // <-- Faltava importar esta linha!
+
 const app = express();
 
-// Libera o CORS para qualquer origem (ou especificamente para o seu GitHub Pages)
+// Libera o CORS para qualquer origem
 app.use(cors({
-  origin: '*', // Ou: 'https://analoliveira113-ctrl.github.io'
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
-
-// Suas rotas abaixo...
 
 // Configuração do Supabase via Variáveis de Ambiente da Vercel
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -122,7 +122,7 @@ router.post('/meu-cartao/simular-radar', async (req, res) => {
   }
 });
 
-// Acopla o roteador nas rotas suportadas pela Vercel e local
+// Acopla o roteador
 app.use('/api', router);
 app.use('/', router);
 
