@@ -3,42 +3,36 @@ const cors = require('cors');
 
 const app = express();
 
+// Configuração do CORS
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
-
 app.use(express.json());
-// Supabase
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
+// Tentativa segura de importar e inicializar o Supabase
 let supabase = null;
-if (SUPABASE_URL && SUPABASE_KEY) {
-  supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-} else {
-  console.warn("⚠️ Variáveis do Supabase não configuradas!");
+try {
+  const { createClient } = require('@supabase/supabase-js');
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_KEY;
+
+  if (SUPABASE_URL && SUPABASE_KEY) {
+    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+} catch (err) {
+  console.error("Erro ao inicializar Supabase:", err);
 }
 
 const router = express.Router();
 
-// ROTA DE TESTE
+// ROTA DE TESTE (Não depende do banco para responder)
 router.get('/teste', (req, res) => {
-  res.json({ 
+  return res.json({ 
     sucesso: true, 
-    mensagem: 'API do Meu Cartão RFID funcionando!',
+    mensagem: 'API do Meu Cartão RFID rodando perfeitamente na Vercel!',
     timestamp: new Date().toISOString()
   });
 });
@@ -51,7 +45,7 @@ router.post('/meu-cartao/cadastrar', async (req, res) => {
       return res.status(400).json({ sucesso: false, mensagem: 'Campos obrigatórios ausentes.' });
     }
     if (!supabase) {
-      return res.status(500).json({ sucesso: false, mensagem: 'Erro: Conexão com banco não configurada.' });
+      return res.status(500).json({ sucesso: false, mensagem: 'Erro: Conexão com Supabase não configurada nas variáveis de ambiente.' });
     }
     const { data, error } = await supabase
       .from('cartoes')
@@ -78,7 +72,7 @@ router.post('/meu-cartao/consultar', async (req, res) => {
       return res.status(400).json({ sucesso: false, mensagem: 'Código e matrícula são obrigatórios.' });
     }
     if (!supabase) {
-      return res.status(500).json({ sucesso: false, mensagem: 'Erro: Conexão com banco não configurada.' });
+      return res.status(500).json({ sucesso: false, mensagem: 'Erro: Conexão com Supabase não configurada nas variáveis de ambiente.' });
     }
     const { data, error } = await supabase
       .from('cartoes')
@@ -117,13 +111,7 @@ router.post('/meu-cartao/simular-radar', async (req, res) => {
   }
 });
 
-// Vincula o roteador tanto na raiz quanto no prefixo /api
 app.use('/api', router);
 app.use('/', router);
 
 module.exports = app;
-
-if (require.main === module) {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
-}
