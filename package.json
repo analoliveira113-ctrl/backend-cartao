@@ -1,17 +1,18 @@
 {
-  "name": "cartao-senai-sesi",
+  "name": "cartao-senai-sesi-backend",
   "version": "1.0.0",
-  "main": "script.js",
+  "main": "api/index.js",
   "scripts": {
-    "start": "node script.js",
+    "start": "node api/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "Sistema de busca de cartão com Supabase",
+  "description": "Sistema de busca de cartao com Supabase",
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
+    "cors": "^2.8.5",
     "express": "^4.22.2"
   }
 }
