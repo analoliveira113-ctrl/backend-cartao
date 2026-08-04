@@ -1,20 +1,17 @@
 const express = require('express');
 const cors = require('cors');
-const { createClient } = require('@supabase/supabase-js');
-
 const app = express();
 
-// Middleware de CORS estendido (Libera chamadas do seu Front-end hospedado em outro domínio)
+// Libera o CORS para qualquer origem (ou especificamente para o seu GitHub Pages)
 app.use(cors({
-  origin: '*',
+  origin: '*', // Ou: 'https://analoliveira113-ctrl.github.io'
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Responde imediatamente às requisições preflight do navegador
-app.options('*', cors());
-
 app.use(express.json());
+
+// Suas rotas abaixo...
 
 // Configuração do Supabase via Variáveis de Ambiente da Vercel
 const SUPABASE_URL = process.env.SUPABASE_URL;
