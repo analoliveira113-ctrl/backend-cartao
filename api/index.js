@@ -4,8 +4,16 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// Middleware de CORS estendido (Libera chamadas do seu Front-end hospedado em outro domínio)
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Responde imediatamente às requisições preflight do navegador
+app.options('*', cors());
+
 app.use(express.json());
 
 // Configuração do Supabase via Variáveis de Ambiente da Vercel
@@ -19,7 +27,7 @@ if (SUPABASE_URL && SUPABASE_KEY) {
   console.warn("⚠️ ATENÇÃO: Variáveis SUPABASE_URL e SUPABASE_KEY não configuradas!");
 }
 
-// Router para manipular as rotas sob /api
+// Router para manipular as rotas
 const router = express.Router();
 
 // Rota de Teste
@@ -117,11 +125,11 @@ router.post('/meu-cartao/simular-radar', async (req, res) => {
   }
 });
 
-// Acopla o roteador nas duas possibilidades de caminho (local ou Vercel Serverless)
+// Acopla o roteador nas rotas suportadas pela Vercel e local
 app.use('/api', router);
 app.use('/', router);
 
-// EXPORTAÇÃO ESSENCIAL PARA A VERCEL:
+// EXPORTAÇÃO ESSENCIAL PARA A VERCEL
 module.exports = app;
 
 // Se executado diretamente (localmente com `node api/index.js`)
